@@ -3,16 +3,18 @@ package userInterface;
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -22,7 +24,12 @@ public class Application extends JFrame implements KeyListener {
 	private static final long serialVersionUID = 1L;
 	private JPanel topPanel;
 	private JTextPane tPane;
-	String test;
+	private String text;
+	String line;
+	public Socket s;
+	public BufferedReader r;
+	public PrintWriter w;
+	public String[] host = new String[2];
 
 	public Application() throws AWTException {
 		topPanel = new JPanel();
@@ -30,18 +37,23 @@ public class Application extends JFrame implements KeyListener {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(400, 500);
 
-		EmptyBorder eb = new EmptyBorder(new Insets(0, 0, 0, 0));
+		// EmptyBorder eb = new EmptyBorder(new Insets(0, 0, 0, 0));
 		tPane = new JTextPane();
-		topPanel.setBorder(eb);
-		tPane.setBorder(eb);
-		topPanel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		tPane.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		// topPanel.setBorder(eb);
+		// tPane.setBorder(eb);
+		// topPanel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		// tPane.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 		// tPane.setMargin(new Insets(5, 5, 5, 5));
 		setBackground(Color.WHITE);
-		topPanel.add(tPane, BorderLayout.WEST);
-		appendToPane(tPane, "EchoClient>", Color.RED);
+		topPanel.setBackground(Color.WHITE);
+		tPane.setBackground(Color.WHITE);
+		appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 		appendToPane(tPane, "", Color.BLACK);
+		getContentPane().add(topPanel, BorderLayout.WEST);
+		// pack();
 		tPane.addKeyListener(this);
+		topPanel.add(tPane, BorderLayout.WEST);
+		setVisible(true);
 	}
 
 	private void appendToPane(JTextPane tp, String msg, Color c) {
@@ -57,21 +69,57 @@ public class Application extends JFrame implements KeyListener {
 		tp.setCaretPosition(len);
 		tp.setCharacterAttributes(aset, false);
 		tp.replaceSelection(msg);
-		getContentPane().add(topPanel, BorderLayout.WEST);
-		// pack();
-		setVisible(true);
+
 	}
 
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					new Application();
-				} catch (AWTException e) {
-					e.printStackTrace();
+	public void inspectText(String text) {
+		if (text.contains("connect") && !text.contains("disconnect")) {
+			host[0] = text.split("\\s+")[1];
+			host[1] = text.split("\\s+")[2];
+			System.out.println("inside the condition" + text);
+			try {
+				s = new Socket(host[0], Integer.parseInt(host[1]));
+				r = new BufferedReader(
+						new InputStreamReader(s.getInputStream()));
+				w = new PrintWriter(s.getOutputStream(), true);
+				// con = new BufferedReader(new
+				// InputStreamReader(System.in));
+				line = r.readLine();
+				if (line != null) {
+					// System.out.println(line);
+					appendToPane(tPane, line + "\n", Color.BLACK);
+					appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 				}
+			} catch (Exception e1) {
+				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
+				e1.printStackTrace();
 			}
-		});
+
+		} else if (text.contains("send")) {
+			try {
+				text = text.replace("send", "").trim();
+				System.out.println("Send Text: " + text);
+				w.println(text);
+				line = r.readLine();
+				appendToPane(tPane, line + "\n", Color.BLACK);
+				appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
+				System.out.println(line);
+			} catch (Exception e1) {
+				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
+				e1.printStackTrace();
+			}
+
+		} else if (text.trim().equals("disconnect")) {
+			try {
+				s.close();
+			} catch (IOException e1) {
+				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
+				e1.printStackTrace();
+			}
+		} else {
+			appendToPane(tPane, "Please enter a valid command. \n", Color.RED);
+			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
+		}
 	}
 
 	@Override
@@ -83,21 +131,9 @@ public class Application extends JFrame implements KeyListener {
 					tPane.getText().length());
 			System.out.print("tPane : " + tPane.getDocument().getLength()
 					+ "  text: " + text);
-			if (text.contains("connect") || text.contains("send")
-					|| text.contains("help") || text.equals("")) {
-
-				System.out.println("inside the condition" + text);
-
-				appendToPane(tPane, test, Color.BLACK);
-				System.out.println("after the call" + test);
-
-			} else {
-				appendToPane(tPane, "Please enter a valid command. \n",
-						Color.RED);
-				e.setKeyCode(KeyEvent.VK_ENTER);
-			}
+			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
+			inspectText(text);
 			tPane.setEditable(true);
-			appendToPane(tPane, "EchoClient>", Color.RED);
 			appendToPane(tPane, "", Color.BLACK);
 		}
 		AttributeSet attributeSet = tPane.getInputAttributes();
@@ -115,6 +151,14 @@ public class Application extends JFrame implements KeyListener {
 		}
 	}
 
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	public String getText() {
+		return text;
+	}
+
 	@Override
 	public void keyTyped(KeyEvent arg0) {
 		// TODO Auto-generated method stub
@@ -125,4 +169,15 @@ public class Application extends JFrame implements KeyListener {
 		// TODO Auto-generated method stub
 	}
 
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					new Application();
+				} catch (AWTException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
 }
