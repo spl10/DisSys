@@ -6,7 +6,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
 
-class ErrorDialog 
+class Vinod 
 {
 	public static void main(String[] args) throws IOException {
 		BufferedReader cons = new BufferedReader(new
