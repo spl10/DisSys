@@ -35,7 +35,7 @@ public class Application extends JFrame implements KeyListener {
 		topPanel = new JPanel();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(400, 500);
+		setSize(800, 500);
 
 		// EmptyBorder eb = new EmptyBorder(new Insets(0, 0, 0, 0));
 		tPane = new JTextPane();
@@ -72,21 +72,17 @@ public class Application extends JFrame implements KeyListener {
 
 	}
 
-	public void inspectText(String text) {
+	public void inspectText(String text) throws IOException {
 		if (text.contains("connect") && !text.contains("disconnect")) {
 			host[0] = text.split("\\s+")[1];
 			host[1] = text.split("\\s+")[2];
-			System.out.println("inside the condition" + text);
 			try {
 				s = new Socket(host[0], Integer.parseInt(host[1]));
 				r = new BufferedReader(
 						new InputStreamReader(s.getInputStream()));
 				w = new PrintWriter(s.getOutputStream(), true);
-				// con = new BufferedReader(new
-				// InputStreamReader(System.in));
 				line = r.readLine();
 				if (line != null) {
-					// System.out.println(line);
 					appendToPane(tPane, line + "\n", Color.BLACK);
 					appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 				}
@@ -98,12 +94,10 @@ public class Application extends JFrame implements KeyListener {
 		} else if (text.contains("send")) {
 			try {
 				text = text.replace("send", "").trim();
-				System.out.println("Send Text: " + text);
 				w.println(text);
 				line = r.readLine();
 				appendToPane(tPane, line + "\n", Color.BLACK);
 				appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
-				System.out.println(line);
 			} catch (Exception e1) {
 				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
 				e1.printStackTrace();
@@ -112,12 +106,38 @@ public class Application extends JFrame implements KeyListener {
 		} else if (text.trim().equals("disconnect")) {
 			try {
 				s.close();
+				appendToPane(tPane, "Connection to Server" + host[0]
+						+ " to port " + host[1] + " is now closed! \n",
+						Color.RED);
+				appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 			} catch (IOException e1) {
 				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
 				e1.printStackTrace();
 			}
+		} else if (text.trim().equals("quit")) {
+
+			appendToPane(tPane, "Application to close!", Color.RED);
+			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
+			dispose();
+		} else if (text.trim().equals("help")) {
+
+			appendToPane(tPane, "Type the following comments \n "
+					+ "connect <Server> <Port> - to connect to the server \n "
+					+ "send <message> - to send message to the server \n "
+					+ "disconnect - to disconnect from the server \n "
+					+ "quit - to quit the application \n "
+					+ "log <level> - to set the log level for the logger. \n",
+					Color.RED);
+			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 		} else {
-			appendToPane(tPane, "Please enter a valid command. \n", Color.RED);
+			appendToPane(tPane, "Please enter a valid command. \n "
+					+ "Type the following comments \n "
+					+ "connect <Server> <Port> - to connect to the server \n "
+					+ "send <message> - to send message to the server \n "
+					+ "disconnect - to disconnect from the server \n "
+					+ "quit - to quit the application \n "
+					+ "log <level> - to set the log level for the logger. \n",
+					Color.RED);
 			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
 		}
 	}
@@ -132,14 +152,18 @@ public class Application extends JFrame implements KeyListener {
 			System.out.print("tPane : " + tPane.getDocument().getLength()
 					+ "  text: " + text);
 			appendToPane(tPane, "EchoClient>", Color.DARK_GRAY);
-			inspectText(text);
+			try {
+				inspectText(text);
+			} catch (IOException e1) {
+				appendToPane(tPane, e1.getMessage() + "\n", Color.RED);
+				e1.printStackTrace();
+			}
 			tPane.setEditable(true);
 			appendToPane(tPane, "", Color.BLACK);
 		}
 		AttributeSet attributeSet = tPane.getInputAttributes();
 		Color c = (Color) (attributeSet == null ? null : attributeSet
 				.getAttribute(StyleConstants.Foreground));
-		System.out.println("Color : " + c.getRed());
 		if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && c.getRed() == 255) {
 			appendToPane(tPane, "", Color.BLACK);
 			e.consume();
