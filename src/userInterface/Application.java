@@ -22,6 +22,7 @@ public class Application extends JFrame implements KeyListener {
 	private static final long serialVersionUID = 1L;
 	private JPanel topPanel;
 	private JTextPane tPane;
+	String test;
 
 	public Application() throws AWTException {
 		topPanel = new JPanel();
@@ -85,6 +86,11 @@ public class Application extends JFrame implements KeyListener {
 			if (text.contains("connect") || text.contains("send")
 					|| text.contains("help") || text.equals("")) {
 
+				System.out.println("inside the condition" + text);
+
+				appendToPane(tPane, test, Color.BLACK);
+				System.out.println("after the call" + test);
+
 			} else {
 				appendToPane(tPane, "Please enter a valid command. \n",
 						Color.RED);
@@ -118,4 +124,5 @@ public class Application extends JFrame implements KeyListener {
 	public void keyPressed(KeyEvent e) {
 		// TODO Auto-generated method stub
 	}
+
 }
